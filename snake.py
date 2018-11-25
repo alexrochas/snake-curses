@@ -16,9 +16,11 @@ score = 0
 start = 0
 
 snake = [[4,10], [4,9], [4,8]]                                     # Initial snake co-ordinates
-food = [10,20]                                                     # First food co-ordinates
+food = [11,20]                                                     # First food co-ordinates
 
 win.addch(food[0], food[1], '*')                                   # Prints the food
+win.addstr(10, 19, 'PRESS ANY KEY TO START')
+init_text = 0
 
 while key != 27:                                                   # While Esc key is not pressed
     win.border(0)
@@ -29,6 +31,10 @@ while key != 27:                                                   # While Esc k
     prevKey = key                                                  # Previous key pressed
     event = win.getch()
     key = key if event == -1 else event
+
+    if start != 0 and init_text == 0:
+        init_text = 1
+        win.addstr(10, 19, '                     ')
 
     if start == 1 or event != -1:
         start = 1
@@ -45,8 +51,6 @@ while key != 27:                                                   # While Esc k
 
         # Calculates the new coordinates of the head of the snake. NOTE: len(snake) increases.
         # This is taken care of later at [1].
-        print([snake[0][0] + (key == KEY_DOWN and 1) + (key == KEY_UP and -1), snake[0][1] + (key == KEY_LEFT and -1) + (key == KEY_RIGHT and 1)])
-
         snake.insert(0, [snake[0][0] + (key == KEY_DOWN and 1) + (key == KEY_UP and -1), snake[0][1] + (key == KEY_LEFT and -1) + (key == KEY_RIGHT and 1)])
 
         # If snake crosses the boundaries, make it enter from the other side
