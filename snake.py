@@ -10,10 +10,10 @@ curses.curs_set(0)
 win.border(0)
 win.nodelay(1)
 
-
-key = -1                                                    # Initializing values
 score = 0
 deaths = 0
+key = -1                                                    # Initializing values
+
 start = 0
 init_text = 0
 
@@ -22,6 +22,7 @@ food = [11,20]                                                     # First food 
 
 win.addch(food[0], food[1], '*')                                   # Prints the food
 win.addstr(10, 19, 'PRESS ANY KEY TO START')
+
 
 while key != 27:                                                   # While Esc key is not pressed
     win.border(0)
@@ -62,10 +63,34 @@ while key != 27:                                                   # While Esc k
         # if snake[0][1] == 59: snake[0][1] = 1
 
         # Exit if snake crosses the boundaries (Uncomment to enable)
-        if snake[0][0] == 0 or snake[0][0] == 19 or snake[0][1] == 0 or snake[0][1] == 59: break
+        if snake[0][0] == 0 or snake[0][0] == 19 or snake[0][1] == 0 or snake[0][1] == 59:
+            win.clear()
+            key = -1                                                    # Initializing values
+
+            start = 0
+            init_text = 0
+
+            snake = [[4,10], [4,9], [4,8]]                                     # Initial snake co-ordinates
+            food = [11,20]                                                     # First food co-ordinates
+
+            win.addch(food[0], food[1], '*')                                   # Prints the food
+            win.addstr(10, 19, 'PRESS ANY KEY TO START')
+            deaths += 1
 
         # If snake runs over itself
-        if snake[0] in snake[1:]: break
+        if snake[0] in snake[1:]:
+            win.clear()
+            key = -1                                                    # Initializing values
+
+            start = 0
+            init_text = 0
+
+            snake = [[4,10], [4,9], [4,8]]                                     # Initial snake co-ordinates
+            food = [11,20]                                                     # First food co-ordinates
+
+            win.addch(food[0], food[1], '*')                                   # Prints the food
+            win.addstr(10, 19, 'PRESS ANY KEY TO START')
+            deaths += 1
 
         if snake[0] == food:                                            # When snake eats the food
             food = []
