@@ -23,6 +23,7 @@ food = [11,20]                                                     # First food 
 win.addch(food[0], food[1], '*')                                   # Prints the food
 win.addstr(10, 19, 'PRESS ANY KEY TO START')
 
+KEYS = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
 
 while key != 27:                                                   # While Esc key is not pressed
     win.border(0)
@@ -32,12 +33,14 @@ while key != 27:                                                   # While Esc k
     win.timeout(150 - (len(snake) / 5 + len(snake) / 10) % 120)          # Increases the speed of Snake as its length increases
 
     prevKey = key                                                  # Previous key pressed
+    key = KEY_RIGHT if start != 1 else KEYS[randint(0,3)]
     event = win.getch()
+    event = key
     key = key if event == -1 else event
 
     if start != 0 and init_text == 0:
         init_text = 1
-        win.addstr(10, 19, '                     ')
+        win.addstr(10, 19, '                      ')
 
     if start == 1 or event != -1:
         start = 1
@@ -54,6 +57,7 @@ while key != 27:                                                   # While Esc k
 
         # Calculates the new coordinates of the head of the snake. NOTE: len(snake) increases.
         # This is taken care of later at [1].
+        key = prevKey if abs(prevKey - key) == 1 else key
         snake.insert(0, [snake[0][0] + (key == KEY_DOWN and 1) + (key == KEY_UP and -1), snake[0][1] + (key == KEY_LEFT and -1) + (key == KEY_RIGHT and 1)])
 
         # If snake crosses the boundaries, make it enter from the other side
@@ -77,7 +81,7 @@ while key != 27:                                                   # While Esc k
             win.addstr(10, 19, 'PRESS ANY KEY TO START')
             deaths += 1
 
-        # If snake runs over itself
+        # If snake runs over itself not happen anymore
         if snake[0] in snake[1:]:
             win.clear()
             key = -1                                                    # Initializing values
