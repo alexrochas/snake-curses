@@ -1,3 +1,5 @@
 .idea
 .ipynb_checkpoints
 log
+*.h5*
+checkpoint

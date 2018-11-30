@@ -1,6 +1,7 @@
 import curses
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN
 from random import randint
+import operator
 import tensorflow as tf
 from tensorflow import layers
 import numpy as np
@@ -40,11 +41,23 @@ def future_position(snake, key):
 
 
 def snake_out_of_bounds(snake):
-    return snake[0][0] == 0 or snake[0][0] == 19 or snake[0][1] == 0 or snake[0][1] == 59 or snake[0] in snake[1:]
+    if snake:
+        return snake[0][0] == 0 \
+               or snake[0][0] == 19 \
+               or snake[0][1] == 0 \
+               or snake[0][1] == 59 \
+               or snake[0] in snake[1:]
+    else:
+        return False
 
 
-def action():
-    return KEYS[randint(0, 3)]
+def action(model, key, have_obstacle, will_die):
+    # direction, have obstacle, will die?, decision
+    best_fit = {}
+    for action in range(0,3):
+        best_fit.update({action: model.predict(np.array([key, have_obstacle, will_die, action]).reshape(-1, 4, 1))})
+    key_index = min(best_fit.iteritems(), key=operator.itemgetter(1))[0]
+    return KEYS[key_index]
 
 
 def training_model():
@@ -58,16 +71,21 @@ training_data = []
 loop = 0
 n_loops = 100
 
+model_load = training_model()
+model_load.load('snake_bot.h5')
+
 while key != 27 and loop < n_loops:                                                   # While Esc key is not pressed
     win.border(0)
     win.addstr(0, 2, 'Score : ' + str(score) + ' ')                # Printing 'Score' and
     win.addstr(0, 14, 'Deaths : ' + str(deaths) + ' ')                # Printing 'Score' and
     win.addstr(0, 27, ' SNAKE ')                                   # 'SNAKE' strings
     # win.timeout(150 - (len(snake) / 5 + len(snake) / 10) % 120)          # Increases the speed of Snake as its length increases
-    win.timeout(1)          # Increases the speed of Snake as its length increases
+    win.timeout(50)          # Increases the speed of Snake as its length increases
 
     prevKey = key                                                  # Previous key pressed
-    key = KEY_RIGHT if start != 1 else action()
+    temp_snake = snake[:]
+    temp_snake.insert(0, future_position(snake, key))
+    key = KEY_RIGHT if start != 1 else action(model_load, key,snake_out_of_bounds(temp_snake), snake_out_of_bounds(temp_snake))
     event = win.getch()
     event = key
     snake_before_move = snake
@@ -125,16 +143,8 @@ while key != 27 and loop < n_loops:                                             
         win.addch(snake[0][0], snake[0][1], '#')
         # left 0 right 1 up 2 down 3
         # direction, have obstacle, will die?, decision
-        training_data.append([[prevKey, snake_out_of_bounds(snake), died, key], np.array(key)])
 
 curses.endwin()
-
-x = np.array([i[0] for i in training_data]).reshape(-1, 4, 1)
-y = np.array([i[1] for i in training_data]).reshape(-1, 1)
-model = training_model()
-model.fit(x, y, n_epoch=100, run_id='snake_eater')
-model.save('snake_bot.h5')
-
 
 print("\nScore - " + str(score))
 print("http://bitemelater.in\n")
