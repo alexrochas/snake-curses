@@ -5,6 +5,10 @@ import tensorflow as tf
 from tensorflow import layers
 import numpy as np
 import os
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Flatten
 from tflearn.layers.core import input_data, fully_connected
 from tflearn.layers.estimator import regression
 import tflearn
@@ -32,7 +36,7 @@ food = [11,20]                                                     # First food 
 win.addch(food[0], food[1], '*')                                   # Prints the food
 win.addstr(10, 19, 'PRESS ANY KEY TO START')
 
-KEYS = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
+KEYS = [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, -1]
 
 
 def future_position(snake, key):
@@ -40,23 +44,33 @@ def future_position(snake, key):
 
 
 def snake_out_of_bounds(snake):
-    return snake[0][0] == 0 or snake[0][0] == 19 or snake[0][1] == 0 or snake[0][1] == 59 or snake[0] in snake[1:]
+    result = snake[0][0] == 0 or snake[0][0] == 19 or snake[0][1] == 0 or snake[0][1] == 59 or snake[0] in snake[1:]
+    print result
+    return result
 
 
 def action():
     return KEYS[randint(0, 3)]
 
 
-def training_model():
-    network = input_data(shape=[None, 4, 1], name='input')
-    network = fully_connected(network, 1, activation='linear')
-    network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
-    model = tflearn.DNN(network, tensorboard_dir='log')
+def training_model(size):
+    model = Sequential()
+    model.add(Dense(16, input_dim=3, activation='relu'))
+    model.add(Dense(16, activation='relu'))
+    model.add(Dense(1, activation='linear'))
+    model.compile(loss='binary_crossentropy', optimizer='adam')
+    # network = input_data(shape=[None, 3, 1], name='input')
+    # network = fully_connected(network, 25, activation='relu')
+    # network = fully_connected(network, 25, activation='relu')
+    # network = fully_connected(network, 1, activation='linear')
+    # network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
+    # model = tflearn.DNN(network, tensorboard_dir='log')
     return model
 
 training_data = []
+steps = []
 loop = 0
-n_loops = 100
+n_loops = 1000
 
 while key != 27 and loop < n_loops:                                                   # While Esc key is not pressed
     win.border(0)
@@ -97,6 +111,7 @@ while key != 27 and loop < n_loops:                                             
 
         # Exit if snake crosses the boundaries (Uncomment to enable)
         if snake_out_of_bounds(snake):
+            training_data.append([[int(KEYS.index(prevKey)), int(KEYS.index(key)), int(snake_out_of_bounds(snake))], 1])
             win.clear()
             key = -1                                                    # Initializing values
 
@@ -111,6 +126,9 @@ while key != 27 and loop < n_loops:                                             
             deaths += 1
             died = 1
             loop += 1
+        else:
+            training_data.append([[int(KEYS.index(prevKey)), int(KEYS.index(key)), int(snake_out_of_bounds(snake))], 0])
+
 
         if snake[0] == food:                                            # When snake eats the food
             food = []
@@ -124,15 +142,28 @@ while key != 27 and loop < n_loops:                                             
             win.addch(last[0], last[1], ' ')
         win.addch(snake[0][0], snake[0][1], '#')
         # left 0 right 1 up 2 down 3
-        # direction, have obstacle, will die?, decision
-        training_data.append([[prevKey, snake_out_of_bounds(snake), died, key], np.array(key)])
+        # direction, have obstacle, decision
 
 curses.endwin()
+#
+# for i in range(0,100):
+#     training_data.append([[int(KEYS.index(KEY_LEFT)), int(KEYS.index(KEY_LEFT)), int(1)], 1])
+#     training_data.append([[int(KEYS.index(KEY_RIGHT)), int(KEYS.index(KEY_RIGHT)), int(1)], 1])
+#     training_data.append([[int(KEYS.index(KEY_UP)), int(KEYS.index(KEY_UP)), int(1)], 1])
+#     training_data.append([[int(KEYS.index(KEY_DOWN)), int(KEYS.index(KEY_DOWN)), int(1)], 1])
 
-x = np.array([i[0] for i in training_data]).reshape(-1, 4, 1)
-y = np.array([i[1] for i in training_data]).reshape(-1, 1)
-model = training_model()
-model.fit(x, y, n_epoch=100, run_id='snake_eater')
+x = np.array([i[0] for i in training_data]) #.reshape(-1, 3, 1)
+y = np.array([i[1] for i in training_data]) #.reshape(-1, 1)
+import pprint
+pprint.pprint(training_data)
+model = training_model(len(x))
+model.fit(x, y, epochs=3, shuffle = True, verbose=1)
+results = []
+for k in range(0,4):
+    results.append(model.predict(np.array([3,k,1]).reshape(-1,3))) #.reshape(-1, 3, 1)))
+    results.append(model.predict_classes(np.array([3,k,1]).reshape(-1,3))) #.reshape(-1, 3, 1)))
+pprint.pprint(results)
+#print(model.predict(np.array([int(KEY_LEFT), int(KEY_LEFT), int(1)]))) #.reshape(-1, 3, 1)))
 model.save('snake_bot.h5')
 
 

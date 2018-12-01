@@ -1,11 +1,15 @@
 import curses
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN
 from random import randint
-import operator
 import tensorflow as tf
 from tensorflow import layers
 import numpy as np
 import os
+from keras.models import load_model
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Flatten
 from tflearn.layers.core import input_data, fully_connected
 from tflearn.layers.estimator import regression
 import tflearn
@@ -53,18 +57,20 @@ def snake_out_of_bounds(snake):
 
 def action(model, key, have_obstacle, will_die):
     # direction, have obstacle, will die?, decision
+    import operator
     best_fit = {}
-    for action in range(0,3):
-        best_fit.update({action: model.predict(np.array([key, have_obstacle, will_die, action]).reshape(-1, 4, 1))})
-    key_index = min(best_fit.iteritems(), key=operator.itemgetter(1))[0]
+    for action in range(0,4):
+        best_fit.update({action: model.predict(np.array([KEYS.index(key), action, have_obstacle]).reshape(-1, 3))})
+    key_index = max(best_fit.iteritems(), key=operator.itemgetter(1))[0]
     return KEYS[key_index]
 
 
 def training_model():
-    network = input_data(shape=[None, 4, 1], name='input')
-    network = fully_connected(network, 1, activation='linear')
-    network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
-    model = tflearn.DNN(network, tensorboard_dir='log')
+    model = load_model('snake_bot.h5')
+    # network = input_data(shape=[None, 3, 1], name='input')
+    # network = fully_connected(network, 1, activation='linear')
+    # network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
+    # model = tflearn.DNN(network, tensorboard_dir='log')
     return model
 
 training_data = []
@@ -72,7 +78,6 @@ loop = 0
 n_loops = 100
 
 model_load = training_model()
-model_load.load('snake_bot.h5')
 
 while key != 27 and loop < n_loops:                                                   # While Esc key is not pressed
     win.border(0)
